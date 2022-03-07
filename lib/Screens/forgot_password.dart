@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:test_project/Config/common_widgets.dart';
 import 'package:test_project/Config/inputTextForm.dart';
+import 'package:http/http.dart' as http;
+import 'package:test_project/Screens/otp_verify.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({Key? key}) : super(key: key);
@@ -11,7 +15,6 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool passwordVisible = false;
   bool isLogin = false;
@@ -19,6 +22,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         centerTitle: true,
@@ -41,7 +45,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(5),
                       child: Image.asset(
-                        'assets/images/appimg1.jpeg',
+                        'assets/images/shekhan logo.png',
                         height: 120,
                       ),
                     ),
@@ -51,7 +55,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     Text(
                       'Forgot Password',
                       style: TextStyle(
-                        color: CustomColors.orange,
+                        color: CustomColors.darkOrange,
                         fontWeight: FontWeight.bold,
                         fontSize: 25,
                       ),
@@ -59,20 +63,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     SizedBox(height: 40),
                     Container(
                       padding: EdgeInsets.fromLTRB(0.5, 0.5, 1, 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(0.0, 0.2),
-                            // spreadRadius: 0.1,
-                            blurRadius: 0.2,
-                          ),
-                        ],
-                      ),
                       child: AllInputDesign(
                         controller: _emailController,
-                        labelText: 'Email',
+                        labelText: 'Username',
                         keyBoardType: TextInputType.emailAddress,
                         focusedBorder: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -83,7 +76,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         contentPadding: EdgeInsets.all(5.0),
                         validator: (text) {
                           if (text.isEmpty || text == null)
-                            return 'Please enter email';
+                            return 'Please Enter Username';
                           else
                             return null;
                         },
@@ -103,7 +96,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               borderRadius: BorderRadius.circular(50),
                               gradient: LinearGradient(
                                 colors: <Color>[
-                                  Color(0xffF26455),
+                                  Color(0xffEA1600).withOpacity(0.7),
                                   Color(0xffEA1600),
                                 ],
                               ),
@@ -125,7 +118,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                       ),
                                     ),
                               onPressed: () {
-                                // _login()
+                                if (_formKey.currentState!.validate()) {
+                                  updateMyProfile();
+                                }
                               },
                               textColor: CustomColors.white,
                               shape: RoundedRectangleBorder(
@@ -145,5 +140,58 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         ),
       ),
     );
+  }
+
+  Future updateMyProfile() async {
+    setState(() {
+      isLogin = true;
+    });
+    var header = {
+      'Content-Type': 'application/json',
+    };
+    try {
+      var request = http.MultipartRequest('POST',
+          Uri.parse('https://admin.sherkhanril.com/api/password/reset'));
+      request.fields.addAll({
+        'secret': 'bd5c49f2-2f73-44d4-8daa-6ff67ab1bc14',
+        'type': 'username',
+        'value': _emailController.text.toString(),
+      });
+      request.headers.addAll(header);
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        var model = await response.stream.bytesToString();
+        var fnh = jsonDecode(model);
+        setState(() {
+          isLogin = false;
+        });
+        if (fnh['status'] == 'success') {
+          showToast(fnh["msg"].toString());
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OtpVerify(
+                username: _emailController.text,
+              ),
+            ),
+          );
+        } else {
+          showToast(fnh["msg"].toString());
+        }
+      } else {
+        setState(() {
+          isLogin = false;
+        });
+        print(response.reasonPhrase);
+      }
+    } catch (Exepction) {
+      setState(() {
+        isLogin = false;
+      });
+      // progressHUD.state.dismiss();
+      showToast(Exepction.toString());
+    }
   }
 }

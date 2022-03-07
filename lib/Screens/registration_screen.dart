@@ -1,22 +1,44 @@
+import 'dart:convert';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_project/Config/common_widgets.dart';
 import 'package:test_project/Config/inputTextForm.dart';
+import 'package:test_project/Config/validations.dart';
+import 'package:test_project/Screens/kyc_detail.dart';
 import 'package:test_project/Screens/navigation_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
-
   @override
   _RegistrationScreenState createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lsstNameController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _referalController = TextEditingController();
+  final TextEditingController _userIdController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool passwordVisible = false;
-  bool isLogin = false;
+  bool passwordVisible = true;
+  bool isLoading = false;
+  bool isChecked = false;
+  bool _isCheck = false;
+  @override
+  void initState() {
+    if (ISREF) {
+      setState(() {
+        _referalController.text = USERNAME1;
+      });
+    }
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,182 +46,114 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: CustomColors.white,
-          ),
-        ),
-        backgroundColor: CustomColors.appBarColor,
+        backgroundColor: CustomColors.white,
         brightness: Brightness.light,
         elevation: 0.0,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(25.0),
-        child: Form(
-          key: _formKey,
-          child: AutofillGroup(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: Image.asset(
-                        'assets/images/appimg1.jpeg',
-                        height: 120,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(25.0),
+          child: Form(
+            key: _formKey,
+            child: AutofillGroup(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.asset(
+                          'assets/images/shekhan logo.png',
+                          height: 120,
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    Text(
-                      'Registration',
-                      style: TextStyle(
-                        color: CustomColors.orange,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 25,
+                      SizedBox(
+                        height: 15,
                       ),
-                    ),
-                    SizedBox(height: 40),
-                    Container(
-                      padding: EdgeInsets.fromLTRB(0.5, 0.5, 1, 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(0.0, 0.2),
-                            // spreadRadius: 0.1,
-                            blurRadius: 0.2,
-                          ),
-                        ],
+                      Text(
+                        'Registration',
+                        style: TextStyle(
+                          color: CustomColors.darkOrange,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 25,
+                        ),
                       ),
-                      child: AllInputDesign(
-                        controller: _passwordController,
-                        labelText: 'Full Name',
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
+                      SizedBox(height: 40),
+                      AllInputDesign(
+                        controller: _firstNameController,
+                        labelText: 'First Name',
                         fillColor: CustomColors.white,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        inputborder: InputBorder.none,
                         contentPadding: EdgeInsets.all(5.0),
-                        obsecureText: passwordVisible,
-                        validator: (value) {
-                          if (value.isEmpty || value == null)
-                            return 'Please password';
-                          if (value.length < 6)
-                            return "Please enter a password with at least 6 characters";
-                          else
-                            return null;
-                        },
+                        validator: validateName,
                       ),
-                    ),
-                    SizedBox(height: 18),
-                    Container(
-                      padding: EdgeInsets.fromLTRB(0.5, 0.5, 1, 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(0.0, 0.2),
-                            // spreadRadius: 0.1,
-                            blurRadius: 0.2,
-                          ),
-                        ],
+                      SizedBox(height: 18),
+                      AllInputDesign(
+                        controller: _lsstNameController,
+                        labelText: 'Last Name',
+                        fillColor: CustomColors.white,
+                        contentPadding: EdgeInsets.all(5.0),
+                        validator: validateLastName,
                       ),
-                      child: AllInputDesign(
-                        controller: _passwordController,
+                      SizedBox(height: 18),
+                      AllInputDesign(
+                        controller: _mobileController,
                         labelText: 'Mobile Number',
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
                         fillColor: CustomColors.white,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        inputborder: InputBorder.none,
                         contentPadding: EdgeInsets.all(5.0),
-                        obsecureText: passwordVisible,
-                        validator: (value) {
-                          if (value.isEmpty || value == null)
-                            return 'Please password';
-                          if (value.length < 6)
-                            return "Please enter a password with at least 6 characters";
-                          else
+                        validator: validateMobile,
+                      ),
+                      SizedBox(height: 18),
+                      AllInputDesign(
+                        controller: _referalController,
+                        labelText: 'Reference',
+                        fillColor: CustomColors.white,
+                        autoValidate: true,
+                        onChanged: (String val) {
+                          checkReferal();
+                        },
+                        suffixIcon: isChecked
+                            ? Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                              )
+                            : SizedBox.shrink(),
+                        contentPadding: EdgeInsets.all(5.0),
+                        validator: (val) {
+                          if (isChecked) {
                             return null;
+                          } else {
+                            return 'Invalid referal';
+                          }
                         },
                       ),
-                    ),
-                    SizedBox(height: 18),
-                    Container(
-                      padding: EdgeInsets.fromLTRB(0.5, 0.5, 1, 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(0.0, 0.2),
-                            // spreadRadius: 0.1,
-                            blurRadius: 0.2,
-                          ),
-                        ],
-                      ),
-                      child: AllInputDesign(
+                      SizedBox(height: 18),
+                      AllInputDesign(
                         controller: _emailController,
                         labelText: 'Email',
                         keyBoardType: TextInputType.emailAddress,
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
                         fillColor: CustomColors.white,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        inputborder: InputBorder.none,
                         contentPadding: EdgeInsets.all(5.0),
-                        validator: (text) {
-                          if (text.isEmpty || text == null)
-                            return 'Please enter email';
-                          else
-                            return null;
-                        },
+                        validator: validateEmail,
                       ),
-                    ),
-                    SizedBox(height: 15),
-                    Container(
-                      padding: EdgeInsets.fromLTRB(0.5, 0.5, 1, 2),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey,
-                            offset: Offset(0.0, 0.2),
-                            // spreadRadius: 0.1,
-                            blurRadius: 0.2,
-                          ),
-                        ],
+                      SizedBox(height: 18),
+                      AllInputDesign(
+                        controller: _userIdController,
+                        labelText: 'Create User Name',
+                        keyBoardType: TextInputType.emailAddress,
+                        fillColor: CustomColors.white,
+                        contentPadding: EdgeInsets.all(5.0),
+                        validator: validateEmail,
                       ),
-                      child: AllInputDesign(
+                      SizedBox(height: 15),
+                      AllInputDesign(
                         controller: _passwordController,
                         labelText: 'Password',
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
                         fillColor: CustomColors.white,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        inputborder: InputBorder.none,
                         contentPadding: EdgeInsets.all(5.0),
                         obsecureText: passwordVisible,
-                        validator: (value) {
-                          if (value.isEmpty || value == null)
-                            return 'Please password';
-                          if (value.length < 6)
-                            return "Please enter a password with at least 6 characters";
-                          else
-                            return null;
-                        },
+                        validator: validatePassword,
                         suffixIcon: IconButton(
                           icon: Icon(
                             passwordVisible
@@ -214,99 +168,127 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           },
                         ),
                       ),
-                    ),
-                    SizedBox(height: 18),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          Container(
-                            height: 40,
-                            margin: EdgeInsets.fromLTRB(40, 10, 40, 10),
-                            width: MediaQuery.of(context).size.width,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(50),
-                              gradient: LinearGradient(
-                                colors: <Color>[
-                                  Color(0xffF26455),
-                                  Color(0xffEA1600),
-                                ],
-                              ),
-                            ),
-                            child: FlatButton(
-                              child: isLogin
-                                  ? SizedBox(
-                                      height: 25,
-                                      width: 25,
-                                      child: CircularProgressIndicator(
-                                        color: CustomColors.white,
-                                        strokeWidth: 3,
-                                      ),
-                                    )
-                                  : Text(
-                                      'Sign Up',
-                                      style: TextStyle(
-                                        color: CustomColors.white,
-                                      ),
-                                    ),
-                              onPressed: () {
-                                // _login()
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => NavigationPage(),
-                                  ),
-                                );
-                              },
-                              textColor: CustomColors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                            ),
+                      SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Checkbox(
+                              value: _isCheck,
+                              onChanged: (val) {
+                                setState(() {
+                                  _isCheck = val!;
+                                });
+                              }),
+                          RichText(
+                            text: new TextSpan(
+                                text: 'Please accept ',
+                                style: TextStyle(color: Colors.black),
+                                children: [
+                                  new TextSpan(
+                                    text: 'Terms & Conditions',
+                                    style: TextStyle(color: Colors.blue),
+                                    recognizer: new TapGestureRecognizer()
+                                      ..onTap = () => tnc(),
+                                  )
+                                ]),
                           ),
-                          SizedBox(height: 15),
-                          Align(
-                            alignment: Alignment.center,
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context);
-                              },
-                              child: RichText(
-                                text: TextSpan(
-                                  text: '',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: CustomColors.black,
-                                  ),
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text: 'Already have an account? ',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        decoration: TextDecoration.underline,
-                                        color: Colors.grey[900],
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: 'Sign In',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        decoration: TextDecoration.underline,
-                                        color: Colors.deepOrange,
-                                      ),
-                                    ),
+                        ],
+                      ),
+                      SizedBox(height: 18),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Container(
+                              height: 40,
+                              margin: EdgeInsets.fromLTRB(40, 10, 40, 10),
+                              width: MediaQuery.of(context).size.width,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(50),
+                                gradient: LinearGradient(
+                                  colors: <Color>[
+                                    Color(0xffEA1600).withOpacity(0.7),
+                                    Color(0xffEA1600),
                                   ],
                                 ),
                               ),
+                              child: FlatButton(
+                                child: isLoading
+                                    ? SizedBox(
+                                        height: 25,
+                                        width: 25,
+                                        child: CircularProgressIndicator(
+                                          color: CustomColors.white,
+                                          strokeWidth: 3,
+                                        ),
+                                      )
+                                    : Text(
+                                        'Sign Up',
+                                        style: TextStyle(
+                                          color: CustomColors.white,
+                                        ),
+                                      ),
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    if (isChecked) {
+                                      if (_isCheck) {
+                                        signUp();
+                                      }
+                                    } else {
+                                      showToast(
+                                          'Please add valid referral code');
+                                    }
+                                  }
+                                },
+                                textColor: CustomColors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 10),
-                        ],
+                            SizedBox(height: 15),
+                            // Align(
+                            //   alignment: Alignment.center,
+                            //   child: GestureDetector(
+                            //     onTap: () {
+                            //       Navigator.pop(context);
+                            //     },
+                            //     child: RichText(
+                            //       text: TextSpan(
+                            //         text: '',
+                            //         style: TextStyle(
+                            //           fontSize: 16,
+                            //           color: CustomColors.black,
+                            //         ),
+                            //         children: <TextSpan>[
+                            //           TextSpan(
+                            //             text: 'Already have an account? ',
+                            //             style: TextStyle(
+                            //               fontSize: 15,
+                            //               decoration: TextDecoration.underline,
+                            //               color: Colors.grey[900],
+                            //             ),
+                            //           ),
+                            //           TextSpan(
+                            //             text: 'Sign In',
+                            //             style: TextStyle(
+                            //               fontWeight: FontWeight.bold,
+                            //               fontSize: 15,
+                            //               decoration: TextDecoration.underline,
+                            //               color: Colors.deepOrange,
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                            // SizedBox(height: 55),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -314,5 +296,106 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> tnc() async {
+    if (!await launch(
+      'https://admin.sherkhanril.com/terms-conditions',
+      forceSafariVC: true,
+      forceWebView: true,
+      enableDomStorage: true,
+    )) {
+      throw 'Could not launch ';
+    }
+  }
+
+  Future signUp() async {
+    setState(() {
+      isLoading = true;
+    });
+    var bodyReq = {
+      'secret': 'bd5c49f2-a-44d4-8daa-6ff67ab1bc14',
+      'referral': _referalController.text,
+      'email': _emailController.text,
+      'username': _userIdController.text,
+      'password': _passwordController.text,
+      'mobile': _mobileController.text,
+      'firstname': _firstNameController.text,
+      'lastname': _lsstNameController.text
+    };
+    try {
+      final response = await http.post(
+        Uri.parse(baseURL + 'register'),
+        body: bodyReq,
+      );
+      var model = json.decode(response.body);
+      if (response.statusCode == 200) {
+        setState(() {
+          isLoading = false;
+        });
+        if (model["status"] == 'fail') {
+          showToast(model["msg"].toString());
+        } else {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString('authToken', model['access_token']);
+          prefs.setBool('isLogin', true);
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => KycDetail(),
+            ),
+            (Route<dynamic> route) => false,
+          );
+        }
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        showToast(model["msg"].toString());
+      }
+    } catch (Exepction) {
+      setState(() {
+        isLoading = false;
+      });
+      showToast(Exepction.toString());
+    }
+  }
+
+  Future checkReferal() async {
+    // progressHUD.state.show();
+
+    var bodyReq = {
+      'secret': 'bd5c49f2-2f73-44d4-8daa-6ff67ab1bc14',
+      'ref_id': _referalController.text,
+    };
+    try {
+      print(baseURL + 'check/referral');
+      final response = await http.post(
+        Uri.parse(baseURL + 'check/referral'),
+        body: bodyReq,
+      );
+      var model = json.decode(response.body);
+      if (response.statusCode == 200) {
+        // progressHUD.state.dismiss();
+        if (model["status"] == 'fail') {
+          setState(() {
+            isChecked = false;
+          });
+          // showToast(model["msg"].toString());
+        } else {
+          if (model['msg'] == 'Referrer username matched') {
+            setState(() {
+              isChecked = true;
+            });
+          }
+        }
+      } else {
+        // progressHUD.state.dismiss();
+        showToast(model["msg"].toString());
+      }
+    } catch (Exepction) {
+      // progressHUD.state.dismiss();
+      showToast(Exepction.toString());
+    }
   }
 }

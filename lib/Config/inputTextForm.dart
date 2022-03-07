@@ -11,6 +11,8 @@ class AllInputDesign extends StatefulWidget {
   final maxLine;
   final enabled;
   final onTap;
+  final onChanged;
+  final autoValidate;
   final hintText;
   final labelText;
   final inputHeaderName;
@@ -47,6 +49,8 @@ class AllInputDesign extends StatefulWidget {
     this.prefixText,
     this.textInputAction,
     this.onTap,
+    this.onChanged,
+    this.autoValidate,
     this.inputborder,
     this.alignLabelWithHint,
     this.focusedBorder,
@@ -99,48 +103,50 @@ class _AllInputDesignState extends State<AllInputDesign> {
       expands: widget.expand ?? false,
       style: widget.style,
       obscureText: widget.obsecureText ?? false,
-      // onChanged: widget.onChanged,
+      onChanged: widget.onChanged,
       textInputAction: widget.textInputAction,
       // obs: widget.obsecureText,
       autofocus: widget.autoFocus,
       decoration: InputDecoration(
-        focusedBorder: widget.focusedBorder,
-        enabledBorder: widget.enabledBorder,
-        disabledBorder: widget.disabledBorder,
-        errorBorder: widget.errorBorder,
-        prefixIcon: widget.prefixIcon,
-        border: widget.inputborder,
-        filled: true,
-        fillColor: widget.fillColor ?? Colors.white,
-        counterText: widget.counterText,
-        hintText: (widget.hintText != null) ? widget.hintText : '',
-        labelText: (widget.labelText != null) ? widget.labelText : '',
-        alignLabelWithHint: widget.alignLabelWithHint ?? false,
-        // labelStyle: GoogleFonts.lato(
-        //   color: Colors.black54,
-        // ),
-        suffixIcon: Padding(
-          padding: const EdgeInsets.only(right: 10.0),
-          child: widget.suffixIcon != null ? widget.suffixIcon : Text(''),
-        ),
-        prefixText: (widget.prefixText != null) ? widget.prefixText : '',
-        prefixStyle: widget.prefixStyle,
-        errorText: widget.errorText,
-        contentPadding: widget.contentPadding ?? EdgeInsets.all(15.0),
-        /*focusedBorder: OutlineInputBorder(
+          // focusedBorder: widget.focusedBorder,
+          // enabledBorder: widget.enabledBorder,
+          // disabledBorder: widget.disabledBorder,
+          // errorBorder: widget.errorBorder,
+          prefixIcon: widget.prefixIcon,
+          // border: widget.inputborder,
+          filled: true,
+          fillColor: widget.fillColor ?? Colors.white,
+          counterText: widget.counterText,
+          hintText: (widget.hintText != null) ? widget.hintText : '',
+          labelText: (widget.labelText != null) ? widget.labelText : '',
+          alignLabelWithHint: widget.alignLabelWithHint ?? false,
+          // labelStyle: GoogleFonts.lato(
+          //   color: Colors.black54,
+          // ),
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 10.0),
+            child: widget.suffixIcon != null ? widget.suffixIcon : Text(''),
+          ),
+          prefixText: (widget.prefixText != null) ? widget.prefixText : '',
+          prefixStyle: widget.prefixStyle,
+          errorText: widget.errorText,
+          contentPadding: widget.contentPadding ?? EdgeInsets.all(15.0),
+          focusedBorder: widget.focusedBorder ??
+              OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(color: Colors.teal[600], width: 1.2),
-              ),*/
-        /*  enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.transparent, width: 1.2),
+              ),
+          enabledBorder: widget.enabledBorder ??
+              OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(color: Colors.teal[600], width: 1.2),
-              ),*/
-        // border: OutlineInputBorder(),
-        /*   border: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.transparent, width: 1.2),
+              ),
+          // border: OutlineInputBorder(),
+          border: widget.inputborder ??
+              OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide:
-                      BorderSide(color: Color(0XFFF3F3F3), width: 1.0))*/
-      ),
+                      BorderSide(color: Colors.transparent, width: 1.0))),
     );
   }
 }

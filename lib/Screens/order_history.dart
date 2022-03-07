@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:test_project/Config/common_widgets.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class OrderHistory extends StatefulWidget {
   const OrderHistory({Key? key}) : super(key: key);
@@ -9,57 +14,59 @@ class OrderHistory extends StatefulWidget {
 }
 
 class _OrderHistoryState extends State<OrderHistory> {
-  List _list = [
-    {
-      'currency_sign': '\$',
-      'booking_id': '676552',
-      'discounted_amount': '75',
-      'name': 'Test Product',
-      'status': '1',
-    },
-    {
-      'currency_sign': '\$',
-      'booking_id': '3412342',
-      'name': 'Test Product',
-      'discounted_amount': '1232',
-      'status': '2',
-    },
-    {
-      'currency_sign': '\$',
-      'booking_id': '451344',
-      'name': 'Test Product',
-      'discounted_amount': '342',
-      'status': '3',
-    },
-    {
-      'currency_sign': '\$',
-      'booking_id': '234324',
-      'name': 'Test Product',
-      'discounted_amount': '784',
-      'status': '4',
-    },
-    {
-      'currency_sign': '\$',
-      'booking_id': '3544334',
-      'name': 'Test Product',
-      'discounted_amount': '424',
-      'status': '5',
-    },
-    {
-      'currency_sign': '\$',
-      'booking_id': '12324324',
-      'name': 'Test Product',
-      'discounted_amount': '231',
-      'status': '6',
-    },
-  ];
+  bool isLoading = false;
+  List dataShow = [];
+  @override
+  void initState() {
+    getDashboard();
+    super.initState();
+  }
+
+  Future getDashboard() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var auth = prefs.getString('authToken');
+    setState(() {
+      isLoading = true;
+    });
+    var header = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $auth'
+    };
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://admin.sherkhanril.com/api/withdraw/history?secret=bd5c49f2-2f73-44d4-8daa-6ff67ab1bc14'),
+        headers: header,
+      );
+      var model = json.decode(response.body);
+      print('----sss--- $model');
+      if (response.statusCode == 200) {
+        setState(() {
+          isLoading = false;
+        });
+        setState(() {
+          dataShow = model['data'];
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        showToast(model["msg"].toString());
+      }
+    } catch (Exepction) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: CustomColors.orange,
+        backgroundColor: CustomColors.darkOrange,
         title: Text(
-          'Order History',
+          'Withdraw History',
           style: TextStyle(
             color: CustomColors.white,
           ),
@@ -67,15 +74,28 @@ class _OrderHistoryState extends State<OrderHistory> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: Column(
+        child: Stack(
           children: [
             ListView.builder(
-                itemCount: _list.length,
+                itemCount: dataShow.length,
                 physics: NeverScrollableScrollPhysics(),
                 shrinkWrap: true,
                 itemBuilder: (BuildContext context, int index) {
+                  final DateTime now =
+                      DateTime.parse(dataShow[index]['created_at']);
+                  final DateFormat formatter =
+                      DateFormat('dd MMM yyyy hh:mm:ss');
+                  final String formatted = formatter.format(now);
+                  var i = int.parse(dataShow[index]['status']);
+                  var status = i == 1
+                      ? 'Success'
+                      : i == 2
+                          ? 'Pending'
+                          : i == 3
+                              ? 'Cancel'
+                              : '';
                   return Padding(
-                    padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 0.0),
+                    padding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 0.0),
                     child: Container(
                       child: InkWell(
                         onTap: () {
@@ -92,15 +112,8 @@ class _OrderHistoryState extends State<OrderHistory> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "#" +
-                                          _list[index]['booking_id'].toString(),
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20.0),
-                                    ),
-                                    Text(
-                                      _list[index]['name'].toString(),
+                                      'Trx Number #' +
+                                          dataShow[index]['trx'].toString(),
                                       maxLines: 1,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -108,36 +121,78 @@ class _OrderHistoryState extends State<OrderHistory> {
                                           color: Colors.black),
                                       textAlign: TextAlign.right,
                                     ),
+                                    SizedBox(
+                                      height: 5.0,
+                                    ),
                                     Text(
-                                      _list[index]['currency_sign'].toString() +
-                                          ' ' +
-                                          _list[index]['discounted_amount']
-                                              .toString(),
+                                      'Amount ₹' +
+                                          dataShow[index]['amount'].toString(),
                                       maxLines: 1,
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16.0,
+                                          fontSize: 18.0,
                                           color: Colors.black),
                                       textAlign: TextAlign.right,
                                     ),
                                     SizedBox(
                                       height: 5.0,
                                     ),
-                                    orderStatusSet(_list, index),
+                                    Text(
+                                      "Charges: ₹" +
+                                          dataShow[index]['charge'].toString(),
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 15.0,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 5.0,
+                                    ),
+                                    Text(
+                                      "Date: " + formatted.toString(),
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.blue,
+                                        fontSize: 15.0,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 6.0,
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "Status: ",
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                            fontSize: 15.0,
+                                          ),
+                                        ),
+                                        getStatus(status),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: 10.0,
+                                    ),
+                                    // orderStatusSet(dataShow, index),
                                   ],
                                 ),
                               ),
-                              Container(
-                                height: 100,
-                                width: 100,
-                                margin: EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: Colors.grey,
-                                    )),
-                              )
+                              // Container(
+                              //   height: 100,
+                              //   width: 100,
+                              //   margin: EdgeInsets.only(bottom: 8),
+                              //   decoration: BoxDecoration(
+                              //       color: Colors.grey[100],
+                              //       borderRadius: BorderRadius.circular(14),
+                              //       border: Border.all(
+                              //         color: Colors.grey,
+                              //       )),
+                              // )
                               // setActionOrder(_list, index),
                             ],
                           ),
@@ -151,8 +206,35 @@ class _OrderHistoryState extends State<OrderHistory> {
                       ),
                     ),
                   );
-                })
+                }),
+            isLoading
+                ? SizedBox(
+                    height: MediaQuery.of(context).size.height,
+                    width: MediaQuery.of(context).size.width,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : SizedBox.shrink()
           ],
+        ),
+      ),
+    );
+  }
+
+  getStatus(status) {
+    return Container(
+      height: 25,
+      padding: EdgeInsets.only(left: 10, right: 10, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.green,
+        borderRadius: BorderRadius.circular(39),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        status,
+        style: TextStyle(
+          color: CustomColors.white,
         ),
       ),
     );
